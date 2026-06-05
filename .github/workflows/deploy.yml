@@ -1,0 +1,64 @@
+name: Deploy Multi-Branch to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat-*'  # 匹配所有 feat- 开头的分支
+  workflow_dispatch:
+
+permissions:
+  contents: write # 必须有权写入 gh-pages 分支
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages-deploy" # 全部分支串行，避免同时写 gh-pages 导致冲突
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 👇 动态计算 Base Path 和 目标目录
+      - name: Configure Paths
+        id: config
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          if [ "$BRANCH" == "main" ]; then
+            echo "base_path=/direct/" >> $GITHUB_ENV
+            echo "dest_dir=." >> $GITHUB_ENV # 根目录
+            echo "branch_name=main" >> $GITHUB_ENV
+          else
+            echo "base_path=/direct/${BRANCH}/" >> $GITHUB_ENV
+            echo "dest_dir=${BRANCH}" >> $GITHUB_ENV # 子目录，例如 feat-login
+            echo "branch_name=${BRANCH}" >> $GITHUB_ENV
+          fi
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_BASE_PATH: ${{ env.base_path }}
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          destination_dir: ${{ env.dest_dir }}
+          keep_files: true  # 👈 关键！保留其他分支的文件，否则 main 会覆盖 feat，或反之
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy ${{ env.branch_name }}: ${{ github.sha }}'
