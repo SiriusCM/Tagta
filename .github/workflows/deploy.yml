@@ -28,29 +28,29 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: 'View/package-lock.json' # 👈 1. 修复缓存找不到锁文件的问题
+          cache-dependency-path: 'View/package-lock.json' # 确保缓存正常读取
 
       - name: Install dependencies
-        working-directory: ./View # 👈 2. 让 npm 命令在 View 目录下执行
+        working-directory: ./View
         run: npm ci
 
-      # 👇 动态计算 Base Path 和 目标目录
+      # 👇 动态计算 Base Path 和 目标目录（已移除多余的 /View/）
       - name: Configure Paths
         id: config
         run: |
           BRANCH="${{ github.ref_name }}"
           if [ "$BRANCH" == "main" ]; then
-            echo "base_path=/Tagta/View/" >> $GITHUB_ENV
+            echo "base_path=/Tagta/" >> $GITHUB_ENV
             echo "dest_dir=." >> $GITHUB_ENV # 根目录
             echo "branch_name=main" >> $GITHUB_ENV
           else
-            echo "base_path=/Tagta/View/${BRANCH}/" >> $GITHUB_ENV
+            echo "base_path=/Tagta/${BRANCH}/" >> $GITHUB_ENV
             echo "dest_dir=${BRANCH}" >> $GITHUB_ENV # 子目录，例如 feat-login
             echo "branch_name=${BRANCH}" >> $GITHUB_ENV
           fi
 
       - name: Build
-        working-directory: ./View # 👈 3. 让打包命令也在 View 目录下执行
+        working-directory: ./View
         run: npm run build
         env:
           VITE_BASE_PATH: ${{ env.base_path }}
@@ -59,9 +59,9 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./View/dist # 此时这里的路径就是正确的了
+          publish_dir: ./View/dist
           destination_dir: ${{ env.dest_dir }}
-          keep_files: true  # 👈 关键！保留其他分支的文件，否则 main 会覆盖 feat，或反之
+          keep_files: true  # 保留其他分支的文件，防止互相覆盖
           user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
+          user_email: 'github-actions[bot]@://github.com'
           commit_message: 'Deploy ${{ env.branch_name }}: ${{ github.sha }}'
