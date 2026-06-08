@@ -1,10 +1,11 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from database import engine
+from utils.database import engine
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
+
 
 class User(Base):
     __tablename__ = "users"
@@ -17,7 +18,7 @@ class User(Base):
     bio = Column(Text, nullable=True)
     avatar = Column(String(255), nullable=True, default='/static/default-avatar.png')
     created_at = Column(DateTime, default=datetime.now)
-    
+
     # Apple登录标识
     apple_user_id = Column(String(100), unique=True, nullable=True, index=True)
 
@@ -36,6 +37,7 @@ class User(Base):
             "apple_user_id": self.apple_user_id
         }
 
+
 class Post(Base):
     __tablename__ = "posts"
 
@@ -43,8 +45,8 @@ class Post(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(Text, nullable=False)
     image = Column(String(255), nullable=True)
-    video = Column(String(255), nullable=True)  # 视频字段
-    media_type = Column(String(20), nullable=True)  # 媒体类型：image/video/text
+    video = Column(String(255), nullable=True)
+    media_type = Column(String(20), nullable=True)
     created_at = Column(DateTime, default=datetime.now)
 
     author = relationship("User", back_populates="posts")
@@ -67,6 +69,7 @@ class Post(Base):
             data["user"] = self.author.to_dict()
         return data
 
+
 class Follow(Base):
     __tablename__ = "follows"
 
@@ -80,6 +83,7 @@ class Follow(Base):
 
     __table_args__ = (UniqueConstraint('follower_id', 'following_id', name='unique_follow'),)
 
+
 class Like(Base):
     __tablename__ = "likes"
 
@@ -91,6 +95,3 @@ class Like(Base):
     post = relationship("Post", back_populates="likes")
 
     __table_args__ = (UniqueConstraint('user_id', 'post_id', name='unique_like'),)
-
-# 创建表
-Base.metadata.create_all(bind=engine)
