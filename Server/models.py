@@ -17,6 +17,9 @@ class User(Base):
     bio = Column(Text, nullable=True)
     avatar = Column(String(255), nullable=True, default='/static/default-avatar.png')
     created_at = Column(DateTime, default=datetime.now)
+    
+    # Apple登录标识
+    apple_user_id = Column(String(100), unique=True, nullable=True, index=True)
 
     posts = relationship("Post", back_populates="author", order_by="desc(Post.created_at)")
     following = relationship("Follow", foreign_keys="Follow.follower_id", back_populates="follower")
@@ -29,7 +32,8 @@ class User(Base):
             "nickname": self.nickname or self.username,
             "bio": self.bio or "",
             "avatar": self.avatar,
-            "created_at": self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
+            "created_at": self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            "apple_user_id": self.apple_user_id
         }
 
 class Post(Base):
@@ -39,6 +43,8 @@ class Post(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(Text, nullable=False)
     image = Column(String(255), nullable=True)
+    video = Column(String(255), nullable=True)  # 视频字段
+    media_type = Column(String(20), nullable=True)  # 媒体类型：image/video/text
     created_at = Column(DateTime, default=datetime.now)
 
     author = relationship("User", back_populates="posts")
@@ -50,6 +56,8 @@ class Post(Base):
             "user_id": self.user_id,
             "content": self.content,
             "image": self.image,
+            "video": self.video,
+            "media_type": self.media_type or "text",
             "created_at": self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
             "likes_count": len(self.likes) if self.likes else 0,
             "comments_count": 0,

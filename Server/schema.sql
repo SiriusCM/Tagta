@@ -1,12 +1,12 @@
--- Twitter Clone Database Schema
+-- Tagta Database Schema
 -- MySQL
 -- Host: 114.67.115.186
 -- Password: gaoliandi
--- Database: twitter_clone
+-- Database: tagta
 
 -- 创建数据库
-CREATE DATABASE IF NOT EXISTS twitter_clone DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE twitter_clone;
+CREATE DATABASE IF NOT EXISTS tagta DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE tagta;
 
 -- 用户表
 CREATE TABLE IF NOT EXISTS users (
@@ -17,9 +17,11 @@ CREATE TABLE IF NOT EXISTS users (
     nickname VARCHAR(50),
     bio TEXT,
     avatar VARCHAR(255) DEFAULT '/static/default-avatar.png',
+    apple_user_id VARCHAR(100) UNIQUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_username (username),
-    INDEX idx_email (email)
+    INDEX idx_email (email),
+    INDEX idx_apple_user_id (apple_user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 帖子表
@@ -28,6 +30,8 @@ CREATE TABLE IF NOT EXISTS posts (
     user_id INT NOT NULL,
     content TEXT NOT NULL,
     image VARCHAR(255),
+    video VARCHAR(255),
+    media_type VARCHAR(20) DEFAULT 'text',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
@@ -59,3 +63,8 @@ CREATE TABLE IF NOT EXISTS likes (
     INDEX idx_user_id (user_id),
     INDEX idx_post_id (post_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 如果数据库已存在，添加新字段
+ALTER TABLE users ADD COLUMN IF NOT EXISTS apple_user_id VARCHAR(100) UNIQUE AFTER avatar;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS video VARCHAR(255) AFTER image;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS media_type VARCHAR(20) DEFAULT 'text' AFTER video;
