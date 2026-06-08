@@ -13,9 +13,8 @@ struct ContentView: View {
     @StateObject private var loginManager = LoginManager.shared
     @State private var showLoginView = false
 
-    // H5应用的URL - 测试环境用localhost，发布时改为真实地址
-    // private let mainURL = URL(string: "http://116.196.69.192:5173")!
-    private let mainURL = URL(string: "http://localhost:5173")!
+    // H5应用的URL
+    private let mainURL = URL(string: "https://siriuscm.github.io/Tagta/")!
 
     var body: some View {
         Group {
