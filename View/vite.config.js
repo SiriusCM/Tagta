@@ -10,7 +10,10 @@ export default defineConfig({
         port: 5173,
         proxy: {
             '/api': {
-                target: 'http://127.0.0.1:8080',
+                // 测试环境
+                //target: 'http://localhost:8080',
+                // 生产环境:
+                target: 'http://116.196.69.192:8080',
                 changeOrigin: true
             }
         }

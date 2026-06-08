@@ -1,28 +1,43 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File, Form, Request
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from models import User, Follow, Post, Like
 from schemas import ProfileUpdate
 from utils.database import get_db
 from utils.auth import get_current_user_from_request, get_token_from_request, get_current_user
+from utils.oss_uploader import upload_media
 
 router = APIRouter(prefix="/api", tags=["用户"])
 
 
 @router.post("/profile")
-def update_profile(data: ProfileUpdate, request, db: Session = Depends(get_db)):
-    """更新用户资料"""
+async def update_profile(
+    request: Request,
+    nickname: Optional[str] = Form(None),
+    bio: Optional[str] = Form(None),
+    avatar_file: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db)
+):
+    """更新用户资料，支持 multipart 上传头像"""
     current_user = get_current_user_from_request(request, db)
 
     if not current_user:
         return {"success": False, "message": "未登录"}
 
-    if data.nickname is not None:
-        current_user.nickname = data.nickname
-    if data.bio is not None:
-        current_user.bio = data.bio
-    if data.avatar is not None:
-        current_user.avatar = data.avatar
+    if nickname is not None:
+        current_user.nickname = nickname
+    if bio is not None:
+        current_user.bio = bio
+
+    if avatar_file:
+        file_content = await avatar_file.read()
+        if len(file_content) > 10 * 1024 * 1024:
+            return {"success": False, "message": "头像大小不能超过10MB"}
+        success, url, error = upload_media(file_content, avatar_file.filename, 'image')
+        if not success:
+            return {"success": False, "message": f"头像上传失败: {error}"}
+        current_user.avatar = url
 
     db.commit()
 

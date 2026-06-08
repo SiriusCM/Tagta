@@ -143,6 +143,8 @@ struct SignInWithAppleView: View {
     /// 发送登录信息到后端进行验证
     private func sendToBackend(authorizationCode: String?, identityToken: String?, userIdentifier: String) async {
         do {
+            // 测试环境用localhost，发布时改为真实地址
+            // guard let url = URL(string: "http://116.196.69.192:8080/api/apple/login") else {
             guard let url = URL(string: "http://localhost:8080/api/apple/login") else {
                 errorMessage = "服务器地址无效"
                 return
@@ -174,6 +176,9 @@ struct SignInWithAppleView: View {
                     if let userData = json["user"] as? [String: Any],
                        let userId = userData["id"] {
                         loginManager.saveUserId(userId as? Int ?? 0)
+                    }
+                    if let token = json["token"] as? String {
+                        loginManager.saveAuthToken(token)
                     }
                     return
                 }

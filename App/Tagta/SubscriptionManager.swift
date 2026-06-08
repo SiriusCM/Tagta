@@ -22,6 +22,27 @@ class SubscriptionManager: ObservableObject {
         Task {
             await requestProducts()
         }
+        // 监听交易更新，处理后台购买恢复等场景
+        Task {
+            await listenForTransactionUpdates()
+        }
+    }
+
+    /// 监听 Transaction.updates，处理后台购买恢复
+    private func listenForTransactionUpdates() async {
+        for await result in Transaction.updates {
+            guard case .verified(let transaction) = result else {
+                print("⚠️ 交易验证失败")
+                continue
+            }
+
+            if transaction.productID == productID {
+                isSubscribed = true
+                print("✅ 通过 Transaction.updates 检测到有效订阅")
+            }
+
+            await transaction.finish()
+        }
     }
 
     func requestProducts() async {

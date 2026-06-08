@@ -13,6 +13,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     let url: URL
     @Binding var isLoggedIn: Bool
     var appleUserId: String?
+    var authToken: String?
 
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -29,6 +30,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 };
                 localStorage.setItem('appleUserId', '\(appleUserId ?? "")');
                 localStorage.setItem('platform', 'ios');
+                localStorage.setItem('token', '\(authToken ?? "")');
             """,
             injectionTime: .atDocumentStart,
             forMainFrameOnly: false
@@ -79,6 +81,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                         platform: 'ios'
                     };
                 }
+                localStorage.setItem('token', '\(parent.authToken ?? "")');
             """
             webView.evaluateJavaScript(script) { _, error in
                 if let error = error {
