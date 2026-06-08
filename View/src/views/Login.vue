@@ -69,46 +69,47 @@ const verifyLogin = async () => {
   const appleUserId = localStorage.getItem('appleUserId') ||
                        (window.tagtaApp && window.tagtaApp.appleUserId)
 
-  const user = localStorage.getItem('user')
+  if (!appleUserId) {
+    isAuthenticated.value = false
+    checking.value = false
+    return
+  }
 
-  if (appleUserId && user) {
-    // 已有登录信息，尝试验证
-    try {
-      const response = await axios.post(`/api/apple/verify`, {
-        apple_user_id: appleUserId
-      })
+  // 尝试验证
+  try {
+    const response = await axios.post(`/api/apple/verify`, {
+      apple_user_id: appleUserId
+    })
 
-      if (response.data.success && response.data.verified) {
-        isAuthenticated.value = true
-        showToastMessage('登录成功')
-        setTimeout(() => router.push('/index'), 500)
-        return
-      }
-    } catch (error) {
-      console.error('验证失败:', error)
+    if (response.data.success && response.data.verified) {
+      localStorage.setItem('user', JSON.stringify(response.data.user))
+      isAuthenticated.value = true
+      showToastMessage('登录成功')
+      setTimeout(() => router.push('/index'), 500)
+      return
     }
+  } catch (error) {
+    console.error('验证失败:', error)
+  }
 
-    // 验证失败，尝试重新登录
-    try {
-      const response = await axios.post('/api/apple/login', {
-        apple_user_id: appleUserId,
-        authorization_code: '',
-        identity_token: ''
-      })
+  // 验证失败，尝试登录
+  try {
+    const response = await axios.post('/api/apple/login', {
+      apple_user_id: appleUserId
+    })
 
-      if (response.data.success) {
-        localStorage.setItem('user', JSON.stringify(response.data.user))
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token)
-        }
-        isAuthenticated.value = true
-        showToastMessage('登录成功')
-        setTimeout(() => router.push('/index'), 500)
-        return
+    if (response.data.success) {
+      localStorage.setItem('user', JSON.stringify(response.data.user))
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token)
       }
-    } catch (error) {
-      console.error('登录失败:', error)
+      isAuthenticated.value = true
+      showToastMessage('登录成功')
+      setTimeout(() => router.push('/index'), 500)
+      return
     }
+  } catch (error) {
+    console.error('登录失败:', error)
   }
 
   isAuthenticated.value = false
