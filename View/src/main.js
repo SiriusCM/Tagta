@@ -21,7 +21,7 @@ axios.interceptors.response.use(
             localStorage.removeItem('user')
             localStorage.removeItem('identityToken')
             localStorage.removeItem('appleUserId')
-            router.push('/login')
+            window.location.reload()
         }
         return Promise.reject(error)
     }

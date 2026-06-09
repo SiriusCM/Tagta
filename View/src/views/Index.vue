@@ -1,5 +1,11 @@
 <template>
   <div class="app-container">
+    <!-- Token 调试信息 -->
+    <div class="debug-token" v-if="debugToken">
+      <span class="debug-label">Token:</span>
+      <span class="debug-value">{{ debugToken }}</span>
+    </div>
+
     <header class="header">
       <span class="back-btn" @click="goBack" v-if="showBackBtn">
         <i class="ri-arrow-left-line"></i>
@@ -125,6 +131,7 @@ const getAuthHeader = () => {
 
 // 状态
 const currentUser = ref(null)
+const debugToken = ref(localStorage.getItem('identityToken') || '')
 const currentTab = ref('discover')
 const discoverTab = ref('recommended')
 const showBackBtn = ref(false)
@@ -404,7 +411,8 @@ const logout = async () => {
   localStorage.removeItem('user')
   localStorage.removeItem('identityToken')
   localStorage.removeItem('appleUserId')
-  router.push('/login')
+  debugToken.value = ''
+  currentUser.value = null
 }
 
 // 发帖成功回调
@@ -430,13 +438,259 @@ const handleProfileSaved = (user) => {
   switchTab('profile')
 }
 
-onMounted(() => {
-  const user = localStorage.getItem('user')
+onMounted(async () => {
   const token = localStorage.getItem('identityToken')
+  if (!token) return
 
-  if (!user || !token) {
-    router.push('/login')
+  // 有 token 时，先尝试从 localStorage 恢复用户信息
+  const user = localStorage.getItem('user')
+  if (user) {
+    currentUser.value = JSON.parse(user)
+    loadRecommendedPosts()
     return
+  }
+
+  // 没有 user 但有 token，向后端验证获取用户信息
+  try {
+    const response = await axios.post('/api/apple/verify', {
+      token: token
+    }, {
+      headers: { 'Authorization': token }
+    })
+    if (response.data.verified) {
+      localStorage.setItem('user', JSON.stringify(response.data.user))
+      currentUser.value = response.data.user
+      loadRecommendedPosts()
+    }
+  } catch (error) {
+    console.error('验证失败:', error)
+  }
+})
+</script>
+
+<style scoped>
+.debug-token {
+  background: #fff3cd;
+  border-bottom: 1px solid #ffc107;
+  padding: 6px 12px;
+  font-size: 12px;
+  word-break: break-all;
+  z-index: 999;
+}
+.debug-label {
+  font-weight: bold;
+  color: #856404;
+  margin-right: 4px;
+}
+.debug-value {
+  color: #664d03;
+  user-select: all;
+}
+</style>er || !token) {
+    router.push('/index')
+    return
+  }
+
+  currentUser.value = JSON.parse(user)
+  loadRecommendedPosts()
+})
+</script>
+
+<style scoped>
+.debug-token {
+  background: #fff3cd;
+  border-bottom: 1px solid #ffc107;
+  padding: 6px 12px;
+  font-size: 12px;
+  word-break: break-all;
+  z-index: 999;
+}
+.debug-label {
+  font-weight: bold;
+  color: #856404;
+  margin-right: 4px;
+}
+.debug-value {
+  color: #664d03;
+  user-select: all;
+}
+</style>r.push('/login')
+    return
+  }
+
+  currentUser.value = JSON.parse(user)
+  loadRecommendedPosts()
+})
+</script>
+
+<style scoped>
+.debug-token {
+  background: #fff3cd;
+  border-bottom: 1px solid #ffc107;
+  padding: 6px 12px;
+  font-size: 12px;
+  word-break: break-all;
+  z-index: 999;
+}
+.debug-label {
+  font-weight: bold;
+  color: #856404;
+  margin-right: 4px;
+}
+.debug-value {
+  color: #664d03;
+  user-select: all;
+}
+</style>n
+  }
+
+  currentUser.value = JSON.parse(user)
+  loadRecommendedPosts()
+})
+</script>
+
+<style scoped>
+.debug-token {
+  background: #fff3cd;
+  border-bottom: 1px solid #ffc107;
+  padding: 6px 12px;
+  font-size: 12px;
+  word-break: break-all;
+  z-index: 999;
+}
+.debug-label {
+  font-weight: bold;
+  color: #856404;
+  margin-right: 4px;
+}
+.debug-value {
+  color: #664d03;
+  user-select: all;
+}
+</style>r.push('/index')
+    return
+  }
+
+  currentUser.value = JSON.parse(user)
+  loadRecommendedPosts()
+})
+</script>
+
+<style scoped>
+.debug-token {
+  background: #fff3cd;
+  border-bottom: 1px solid #ffc107;
+  padding: 6px 12px;
+  font-size: 12px;
+  word-break: break-all;
+  z-index: 999;
+}
+.debug-label {
+  font-weight: bold;
+  color: #856404;
+  margin-right: 4px;
+}
+.debug-value {
+  color: #664d03;
+  user-select: all;
+}
+</style>r.push('/login')
+    return
+  }
+
+  currentUser.value = JSON.parse(user)
+  loadRecommendedPosts()
+})
+</script>
+
+<style scoped>
+.debug-token {
+  background: #fff3cd;
+  border-bottom: 1px solid #ffc107;
+  padding: 6px 12px;
+  font-size: 12px;
+  word-break: break-all;
+  z-index: 999;
+}
+.debug-label {
+  font-weight: bold;
+  color: #856404;
+  margin-right: 4px;
+}
+.debug-value {
+  color: #664d03;
+  user-select: all;
+}
+</style>n
+  }
+
+  currentUser.value = JSON.parse(user)
+  loadRecommendedPosts()
+})
+</script>
+
+<style scoped>
+.debug-token {
+  background: #fff3cd;
+  border-bottom: 1px solid #ffc107;
+  padding: 6px 12px;
+  font-size: 12px;
+  word-break: break-all;
+  z-index: 999;
+}
+.debug-label {
+  font-weight: bold;
+  color: #856404;
+  margin-right: 4px;
+}
+.debug-value {
+  color: #664d03;
+  user-select: all;
+}
+</style>er || !token) {
+    router.push('/index')
+    return
+  }
+
+  currentUser.value = JSON.parse(user)
+  loadRecommendedPosts()
+})
+</script>er || !token) {
+    router.push('/index')
+    return
+  }
+
+  currentUser.value = JSON.parse(user)
+  loadRecommendedPosts()
+})
+</script>r.push('/login')
+    return
+  }
+
+  currentUser.value = JSON.parse(user)
+  loadRecommendedPosts()
+})
+</script>n
+  }
+
+  currentUser.value = JSON.parse(user)
+  loadRecommendedPosts()
+})
+</script>r.push('/index')
+    return
+  }
+
+  currentUser.value = JSON.parse(user)
+  loadRecommendedPosts()
+})
+</script>r.push('/login')
+    return
+  }
+
+  currentUser.value = JSON.parse(user)
+  loadRecommendedPosts()
+})
+</script>n
   }
 
   currentUser.value = JSON.parse(user)

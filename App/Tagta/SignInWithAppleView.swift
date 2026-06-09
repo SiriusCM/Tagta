@@ -45,7 +45,9 @@ struct SignInWithAppleView: View {
                 SignInWithAppleButton(.signIn) { request in
                     request.requestedScopes = [.email, .fullName]
                 } onCompletion: { result in
-                    handleSignInResult(result)
+                    Task {
+                        await handleSignInResult(result)
+                    }
                 }
                 .signInWithAppleButtonStyle(.black)
                 .frame(height: 50)
@@ -77,7 +79,7 @@ struct SignInWithAppleView: View {
         .padding()
     }
 
-    private func handleSignInResult(_ result: Result<ASAuthorization, Error>) {
+    private func handleSignInResult(_ result: Result<ASAuthorization, Error>) async {
         isLoading = true
         errorMessage = nil
 
