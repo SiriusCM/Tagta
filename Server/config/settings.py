@@ -22,10 +22,21 @@ class Settings:
         """生成 PostgreSQL 数据库连接 URL"""
         return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
-    # JWT 配置
-    SECRET_KEY = os.getenv("SECRET_KEY", "your_secret_key_here")
-    ALGORITHM = os.getenv("ALGORITHM", "HS256")
-    ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+    # Redis 配置
+    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
+    REDIS_DB = int(os.getenv("REDIS_DB", "0"))
+
+    @property
+    def REDIS_URL(self) -> str:
+        """生成 Redis 连接 URL"""
+        if self.REDIS_PASSWORD:
+            return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+
+    # Token 过期时间（秒）
+    TOKEN_EXPIRE_SECONDS = int(os.getenv("TOKEN_EXPIRE_SECONDS", "1800"))  # 30分钟
 
     # 服务器配置
     HOST = os.getenv("HOST", "0.0.0.0")
@@ -47,6 +58,11 @@ class Settings:
 
     # 允许的视频格式
     ALLOWED_VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.webm'}
+
+    # Apple 登录配置
+    APPLE_CLIENT_ID = os.getenv("APPLE_CLIENT_ID", "com.sirius.tagta")
+    APPLE_ISSUER = "https://appleid.apple.com"
+    APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
 
 
 # 创建配置实例

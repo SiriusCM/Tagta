@@ -3,10 +3,14 @@ from typing import Optional
 
 
 class AppleLoginRequest(BaseModel):
-    """苹果登录请求"""
-    apple_user_id: str
-    authorization_code: Optional[str] = None
-    identity_token: Optional[str] = None
+    """苹果登录请求：仅接收 identity_token，服务端自行验证并解析用户信息"""
+    identity_token: str  # Apple 的 identityToken（JWT）
+    full_name: Optional[str] = None  # 全名（仅首次登录由 iOS 提供，不在 JWT 中）
+
+
+class TokenVerifyRequest(BaseModel):
+    """Token 校验请求"""
+    token: str
 
 
 class ProfileUpdate(BaseModel):

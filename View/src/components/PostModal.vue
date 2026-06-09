@@ -87,8 +87,8 @@ const imageInput = ref(null)
 const videoInput = ref(null)
 
 const getAuthHeader = () => {
-  const token = localStorage.getItem('token')
-  return token ? { 'Authorization': `Bearer ${token}` } : {}
+  const token = localStorage.getItem('identityToken')
+  return token ? { 'Authorization': token } : {}
 }
 
 const updateCharCount = () => {
@@ -116,24 +116,24 @@ const submitPost = async () => {
   if (!postContent.value.trim()) return
 
   try {
-    if (postMediaType.value === 'text') {
-      await axios.post('/api/posts', {
-        content: postContent.value,
-        media_type: postMediaType.value
-      }, { headers: getAuthHeader() })
-    } else {
-      const formData = new FormData()
-      formData.append('content', postContent.value)
-      const file = postMediaType.value === 'image' ? postImageFile.value : postVideoFile.value
-      if (file) formData.append('file', file)
-      await axios.post('/api/posts', formData, {
-        headers: { ...getAuthHeader(), 'Content-Type': 'multipart/form-data' }
-      })
-    }
+    const formData = new FormData()
+    formData.append('content', postContent.value)
+    formData.append('media_type', postMediaType.value)
+
+    const file = postMediaType.value === 'image'
+      ? postImageFile.value
+      : (postMediaType.value === 'video' ? postVideoFile.value : null)
+
+    if (file) formData.append('file', file)
+
+    await axios.post('/api/posts', formData, {
+      headers: { ...getAuthHeader(), 'Content-Type': 'multipart/form-data' }
+    })
+
     emit('submit')
     resetForm()
   } catch (error) {
-    alert(error.response?.data?.message || '发布失败')
+    alert(error.response?.data?.detail || '发布失败')
   }
 }
 

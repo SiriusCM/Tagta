@@ -59,8 +59,8 @@ const userPosts = ref([])
 const defaultAvatar = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23667eea"/></svg>'
 
 const getAuthHeader = () => {
-  const token = localStorage.getItem('token')
-  return token ? { 'Authorization': `Bearer ${token}` } : {}
+  const token = localStorage.getItem('identityToken')
+  return token ? { 'Authorization': token } : {}
 }
 
 const loadUserProfile = async () => {
@@ -82,7 +82,7 @@ const followUser = async () => {
     profileUser.value.is_following = true
     profileUser.value.follower_count = (profileUser.value.follower_count || 0) + 1
   } catch (error) {
-    emit('error', error.response?.data?.message || '关注失败')
+    emit('error', error.response?.data?.detail || '关注失败')
   }
 }
 
@@ -92,7 +92,7 @@ const unfollowUser = async () => {
     profileUser.value.is_following = false
     profileUser.value.follower_count = Math.max(0, (profileUser.value.follower_count || 1) - 1)
   } catch (error) {
-    emit('error', error.response?.data?.message || '取消关注失败')
+    emit('error', error.response?.data?.detail || '取消关注失败')
   }
 }
 

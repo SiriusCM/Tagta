@@ -24,7 +24,7 @@ struct ContentView: View {
                     url: mainURL,
                     isLoggedIn: $loginManager.isLoggedIn,
                     appleUserId: loginManager.appleUserId,
-                    authToken: loginManager.authToken
+                    identityToken: loginManager.identityToken
                 )
                 .ignoresSafeArea(edges: .horizontal)
             } else if subscriptionManager.isSubscribed {

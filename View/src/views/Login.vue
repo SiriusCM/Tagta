@@ -66,10 +66,10 @@ const showToastMessage = (msg) => {
 
 // 验证登录状态
 const verifyLogin = async () => {
-  const appleUserId = localStorage.getItem('appleUserId') ||
-                       (window.tagtaApp && window.tagtaApp.appleUserId)
+  const identityToken = localStorage.getItem('identityToken') ||
+                       (window.tagtaApp && window.tagtaApp.identityToken)
 
-  if (!appleUserId) {
+  if (!identityToken) {
     isAuthenticated.value = false
     checking.value = false
     return
@@ -78,10 +78,12 @@ const verifyLogin = async () => {
   // 尝试验证
   try {
     const response = await axios.post(`/api/apple/verify`, {
-      apple_user_id: appleUserId
+      token: identityToken
+    }, {
+      headers: { 'Authorization': identityToken }
     })
 
-    if (response.data.success && response.data.verified) {
+    if (response.data.verified) {
       localStorage.setItem('user', JSON.stringify(response.data.user))
       isAuthenticated.value = true
       showToastMessage('登录成功')
@@ -90,26 +92,6 @@ const verifyLogin = async () => {
     }
   } catch (error) {
     console.error('验证失败:', error)
-  }
-
-  // 验证失败，尝试登录
-  try {
-    const response = await axios.post('/api/apple/login', {
-      apple_user_id: appleUserId
-    })
-
-    if (response.data.success) {
-      localStorage.setItem('user', JSON.stringify(response.data.user))
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token)
-      }
-      isAuthenticated.value = true
-      showToastMessage('登录成功')
-      setTimeout(() => router.push('/index'), 500)
-      return
-    }
-  } catch (error) {
-    console.error('登录失败:', error)
   }
 
   isAuthenticated.value = false

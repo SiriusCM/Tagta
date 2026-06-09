@@ -117,8 +117,8 @@ import PostModal from '../components/PostModal.vue'
 const router = useRouter()
 
 const getAuthHeader = () => {
-  const token = localStorage.getItem('token')
-  return token ? { 'Authorization': `Bearer ${token}` } : {}
+  const token = localStorage.getItem('identityToken')
+  return token ? { 'Authorization': token } : {}
 }
 
 // 状态
@@ -307,7 +307,7 @@ const deletePost = async (post) => {
     followingPosts.value = followingPosts.value.filter(p => p.id !== post.id)
     myPosts.value = myPosts.value.filter(p => p.id !== post.id)
   } catch (error) {
-    showToastMessage(error.response?.data?.message || '删除失败')
+    showToastMessage(error.response?.data?.detail || '删除失败')
   }
 }
 
@@ -354,9 +354,20 @@ const showFollowersList = async () => {
 }
 
 // 登出
-const logout = () => {
+const logout = async () => {
+  try {
+    const identityToken = localStorage.getItem('identityToken')
+    if (identityToken) {
+      await axios.post('/api/logout', {
+        token: identityToken
+      }, { headers: getAuthHeader() })
+    }
+  } catch (error) {
+    console.error('登出请求失败:', error)
+  }
+
   localStorage.removeItem('user')
-  localStorage.removeItem('token')
+  localStorage.removeItem('identityToken')
   localStorage.removeItem('appleUserId')
   router.push('/login')
 }
@@ -386,10 +397,9 @@ const handleProfileSaved = (user) => {
 
 onMounted(() => {
   const user = localStorage.getItem('user')
-  const appleUserId = localStorage.getItem('appleUserId') ||
-                      (window.tagtaApp && window.tagtaApp.appleUserId)
+  const token = localStorage.getItem('identityToken')
 
-  if (!user || !appleUserId) {
+  if (!user || !token) {
     router.push('/login')
     return
   }

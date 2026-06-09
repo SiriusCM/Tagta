@@ -13,4 +13,18 @@ if (import.meta.env.PROD) {
     axios.defaults.baseURL = ''
 }
 
+// 全局 401 拦截器
+axios.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem('user')
+            localStorage.removeItem('identityToken')
+            localStorage.removeItem('appleUserId')
+            router.push('/login')
+        }
+        return Promise.reject(error)
+    }
+)
+
 createApp(App).use(router).mount('#app')

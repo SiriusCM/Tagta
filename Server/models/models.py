@@ -12,8 +12,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, nullable=False, index=True)
-    email = Column(String(100), unique=True, nullable=False, index=True)
-    password = Column(String(255), nullable=False)
+    email = Column(String(100), unique=True, nullable=True, index=True)
+    full_name = Column(String(100), nullable=True)  # Apple 全名
     nickname = Column(String(50), nullable=True)
     bio = Column(Text, nullable=True)
     avatar = Column(String(255), nullable=True, default='/static/default-avatar.png')
@@ -30,6 +30,8 @@ class User(Base):
         return {
             "id": self.id,
             "username": self.username,
+            "email": self.email or "",
+            "full_name": self.full_name or "",
             "nickname": self.nickname or self.username,
             "bio": self.bio or "",
             "avatar": self.avatar,

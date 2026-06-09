@@ -1,3 +1,3 @@
-from .schemas import AppleLoginRequest, ProfileUpdate, PostCreate
+from .schemas import AppleLoginRequest, TokenVerifyRequest, ProfileUpdate, PostCreate
 
-__all__ = ['AppleLoginRequest', 'ProfileUpdate', 'PostCreate']
+__all__ = ['AppleLoginRequest', 'TokenVerifyRequest', 'ProfileUpdate', 'PostCreate']

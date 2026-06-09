@@ -1,32 +1,34 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, HTTPException, status
 from sqlalchemy.orm import Session
 
 from models import User, Follow
-from utils.auth import get_token_from_request, get_current_user
+from utils.auth import get_current_user
 from utils.database import get_db
 
 router = APIRouter(prefix="/api", tags=["关注"])
 
+DEFAULT_PAGE_SIZE = 20
+MAX_PAGE_SIZE = 100
 
-def get_current_user_from_request(request, db: Session):
+
+def get_current_user_from_request(request: Request, db: Session):
     """从请求中获取当前用户"""
-    token = get_token_from_request(request)
-    return get_current_user(token, db)
+    return get_current_user(request, db)
 
 
 @router.post("/follow/{user_id}")
-def follow_user(user_id: int, request, db: Session = Depends(get_db)):
+def follow_user(user_id: int, request: Request, db: Session = Depends(get_db)):
     """关注用户"""
     current_user = get_current_user_from_request(request, db)
 
     if not current_user:
-        return {"success": False, "message": "请先登录"}
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="请先登录")
 
     if current_user.id == user_id:
-        return {"success": False, "message": "不能关注自己"}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不能关注自己")
 
     if not db.query(User).filter(User.id == user_id).first():
-        return {"success": False, "message": "用户不存在"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
 
     existing = db.query(Follow).filter_by(
         follower_id=current_user.id,
@@ -34,22 +36,22 @@ def follow_user(user_id: int, request, db: Session = Depends(get_db)):
     ).first()
 
     if existing:
-        return {"success": False, "message": "已经关注了"}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="已经关注了")
 
     follow = Follow(follower_id=current_user.id, following_id=user_id)
     db.add(follow)
     db.commit()
 
-    return {"success": True, "message": "关注成功"}
+    return {"message": "关注成功"}
 
 
 @router.post("/follow/{user_id}/unfollow")
-def unfollow_user(user_id: int, request, db: Session = Depends(get_db)):
+def unfollow_user(user_id: int, request: Request, db: Session = Depends(get_db)):
     """取消关注"""
     current_user = get_current_user_from_request(request, db)
 
     if not current_user:
-        return {"success": False, "message": "请先登录"}
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="请先登录")
 
     follow = db.query(Follow).filter_by(
         follower_id=current_user.id,
@@ -57,31 +59,59 @@ def unfollow_user(user_id: int, request, db: Session = Depends(get_db)):
     ).first()
 
     if not follow:
-        return {"success": False, "message": "尚未关注"}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="尚未关注")
 
     db.delete(follow)
     db.commit()
 
-    return {"success": True, "message": "取消关注成功"}
+    return {"message": "取消关注成功"}
 
 
 @router.post("/users/{user_id}/following")
-def get_following(user_id: int, db: Session = Depends(get_db)):
+def get_following(
+    user_id: int,
+    skip: int = 0,
+    limit: int = DEFAULT_PAGE_SIZE,
+    db: Session = Depends(get_db)
+):
     """获取用户的关注列表"""
+    if limit > MAX_PAGE_SIZE:
+        limit = MAX_PAGE_SIZE
+
     if not db.query(User).filter(User.id == user_id).first():
-        return {"success": False, "message": "用户不存在"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
 
-    following = db.query(Follow).filter(Follow.follower_id == user_id).all()
+    following = (
+        db.query(Follow)
+        .filter(Follow.follower_id == user_id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
-    return {"success": True, "users": [f.following.to_dict() for f in following]}
+    return {"users": [f.following.to_dict() for f in following]}
 
 
 @router.post("/users/{user_id}/followers")
-def get_followers(user_id: int, db: Session = Depends(get_db)):
+def get_followers(
+    user_id: int,
+    skip: int = 0,
+    limit: int = DEFAULT_PAGE_SIZE,
+    db: Session = Depends(get_db)
+):
     """获取用户的粉丝列表"""
+    if limit > MAX_PAGE_SIZE:
+        limit = MAX_PAGE_SIZE
+
     if not db.query(User).filter(User.id == user_id).first():
-        return {"success": False, "message": "用户不存在"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
 
-    followers = db.query(Follow).filter(Follow.following_id == user_id).all()
+    followers = (
+        db.query(Follow)
+        .filter(Follow.following_id == user_id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
-    return {"success": True, "users": [f.follower.to_dict() for f in followers]}
+    return {"users": [f.follower.to_dict() for f in followers]}

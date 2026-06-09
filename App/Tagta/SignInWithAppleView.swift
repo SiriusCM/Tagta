@@ -93,11 +93,17 @@ struct SignInWithAppleView: View {
                     identityToken = tokenString
                 }
 
-                // 获取授权码
-                var authorizationCode: String?
-                if let codeData = appleIDCredential.authorizationCode,
-                   let codeString = String(data: codeData, encoding: .utf8) {
-                    authorizationCode = codeString
+                // 获取邮箱（仅首次登录时提供）
+                let email = appleIDCredential.email
+
+                // 获取全名（仅首次登录时提供）
+                var fullName: String?
+                if let name = appleIDCredential.fullName {
+                    let givenName = name.givenName ?? ""
+                    let familyName = name.familyName ?? ""
+                    if !givenName.isEmpty || !familyName.isEmpty {
+                        fullName = "\(givenName) \(familyName)".trimmingCharacters(in: .whitespaces)
+                    }
                 }
 
                 // 保存登录状态
@@ -106,9 +112,10 @@ struct SignInWithAppleView: View {
                 // 发送到后端进行验证
                 Task {
                     await sendToBackend(
-                        authorizationCode: authorizationCode,
                         identityToken: identityToken,
-                        userIdentifier: userIdentifier
+                        userIdentifier: userIdentifier,
+                        email: email,
+                        fullName: fullName
                     )
                 }
             }
@@ -141,7 +148,7 @@ struct SignInWithAppleView: View {
     }
 
     /// 发送登录信息到后端进行验证
-    private func sendToBackend(authorizationCode: String?, identityToken: String?, userIdentifier: String) async {
+    private func sendToBackend(identityToken: String?, userIdentifier: String, email: String?, fullName: String?) async {
         do {
             // 测试环境用localhost，发布时改为真实地址
             // guard let url = URL(string: "http://116.196.69.192:8080/api/apple/login") else {
@@ -154,11 +161,18 @@ struct SignInWithAppleView: View {
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-            let body: [String: Any] = [
+            var body: [String: Any] = [
                 "apple_user_id": userIdentifier,
-                "authorization_code": authorizationCode ?? "",
                 "identity_token": identityToken ?? ""
             ]
+
+            // 只有当有值时才添加到请求中
+            if let email = email {
+                body["email"] = email
+            }
+            if let fullName = fullName {
+                body["full_name"] = fullName
+            }
 
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -177,8 +191,9 @@ struct SignInWithAppleView: View {
                        let userId = userData["id"] {
                         loginManager.saveUserId(userId as? Int ?? 0)
                     }
-                    if let token = json["token"] as? String {
-                        loginManager.saveAuthToken(token)
+                    // 存储 identityToken（用于后续请求）
+                    if let token = json["identity_token"] as? String {
+                        loginManager.saveIdentityToken(token)
                     }
                     return
                 }

@@ -18,11 +18,11 @@ class LoginManager: ObservableObject {
     @Published var isLoggedIn = false
     @Published var appleUserId: String?
     @Published var userId: Int = 0
-    @Published var authToken: String?
+    @Published var identityToken: String?
 
     private let appleUserIdKey = "AppleUserIdentifier"
     private let userIdKey = "TagtaUserId"
-    private let authTokenKey = "TagtaAuthToken"
+    private let identityTokenKey = "TagtaIdentityToken"
 
     init() {
         loadLoginState()
@@ -32,10 +32,10 @@ class LoginManager: ObservableObject {
         isLoggedIn = false
         appleUserId = nil
         userId = 0
-        authToken = nil
+        identityToken = nil
         UserDefaults.standard.removeObject(forKey: appleUserIdKey)
         UserDefaults.standard.removeObject(forKey: userIdKey)
-        UserDefaults.standard.removeObject(forKey: authTokenKey)
+        UserDefaults.standard.removeObject(forKey: identityTokenKey)
         UserDefaults.standard.synchronize()
     }
 
@@ -52,9 +52,10 @@ class LoginManager: ObservableObject {
         UserDefaults.standard.synchronize()
     }
 
-    func saveAuthToken(_ token: String) {
-        authToken = token
-        UserDefaults.standard.set(token, forKey: authTokenKey)
+    /// 保存 identityToken（用于后续请求认证）
+    func saveIdentityToken(_ token: String) {
+        identityToken = token
+        UserDefaults.standard.set(token, forKey: identityTokenKey)
         UserDefaults.standard.synchronize()
     }
 
@@ -64,7 +65,12 @@ class LoginManager: ObservableObject {
             isLoggedIn = !token.isEmpty
         }
         userId = UserDefaults.standard.integer(forKey: userIdKey)
-        authToken = UserDefaults.standard.string(forKey: authTokenKey)
+        identityToken = UserDefaults.standard.string(forKey: identityTokenKey)
+    }
+
+    /// 获取当前 identityToken，用于请求头
+    func getIdentityToken() -> String? {
+        return identityToken
     }
 
     /// 检查 Apple ID 凭证状态

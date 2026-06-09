@@ -51,8 +51,8 @@ watch(() => props.currentUser, (user) => {
 const defaultAvatar = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23667eea"/></svg>'
 
 const getAuthHeader = () => {
-  const token = localStorage.getItem('token')
-  return token ? { 'Authorization': `Bearer ${token}` } : {}
+  const token = localStorage.getItem('identityToken')
+  return token ? { 'Authorization': token } : {}
 }
 
 const triggerAvatarUpload = () => {
@@ -82,7 +82,7 @@ const saveProfile = async () => {
     avatarFile.value = null
     emit('saved', response.data.user)
   } catch (error) {
-    alert(error.response?.data?.message || '保存失败')
+    alert(error.response?.data?.detail || '保存失败')
   }
 }
 </script>
