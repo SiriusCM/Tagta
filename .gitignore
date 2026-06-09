@@ -7,8 +7,7 @@ build/
 *.egg
 
 # Environment variables
-.env
-!.env.example
+Server/.env
 
 # IDE
 .idea/
