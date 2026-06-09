@@ -29,7 +29,7 @@
         :key="post.id"
         :post="post"
         :showDelete="post.user_id === currentUser?.id"
-        :showShare="post.user_id === currentUser?.id"
+        :showShare="true"
         @like="$emit('toggleLike', $event)"
         @delete="$emit('deletePost', $event)"
         @share="$emit('sharePost', $event)"

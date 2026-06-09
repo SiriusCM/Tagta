@@ -4,9 +4,8 @@ from typing import Optional
 from pydantic import BaseModel
 
 from models import User, Follow, Post, Like
-from schemas import ProfileUpdate
 from utils.database import get_db
-from utils.auth import get_current_user
+from utils.auth import get_current_user, get_current_user_required
 from utils.oss_uploader import upload_media
 
 
@@ -21,6 +20,15 @@ DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
 
 
+def _user_with_counts(user: User, db: Session) -> dict:
+    """将用户信息与计数合并，供前端直接使用"""
+    user_dict = user.to_dict()
+    user_dict["follower_count"] = db.query(Follow).filter(Follow.following_id == user.id).count()
+    user_dict["following_count"] = db.query(Follow).filter(Follow.follower_id == user.id).count()
+    user_dict["post_count"] = db.query(Post).filter(Post.user_id == user.id).count()
+    return user_dict
+
+
 @router.post("/profile")
 async def update_profile(
     request: Request,
@@ -30,10 +38,7 @@ async def update_profile(
     db: Session = Depends(get_db)
 ):
     """更新用户资料，支持 multipart 上传头像"""
-    current_user = get_current_user(request, db)
-
-    if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="未登录")
+    current_user = get_current_user_required(request, db)
 
     if nickname is not None:
         current_user.nickname = nickname
@@ -51,7 +56,7 @@ async def update_profile(
 
     db.commit()
 
-    return {"user": current_user.to_dict()}
+    return {"user": _user_with_counts(current_user, db)}
 
 
 @router.post("/users/{user_id}")
@@ -74,11 +79,9 @@ def get_user(
             following_id=user_id
         ).first() is not None
 
+    user_dict = _user_with_counts(user, db)
     return {
-        "user": user.to_dict(),
-        "follower_count": db.query(Follow).filter(Follow.following_id == user_id).count(),
-        "following_count": db.query(Follow).filter(Follow.follower_id == user_id).count(),
-        "post_count": db.query(Post).filter(Post.user_id == user_id).count(),
+        "user": user_dict,
         "is_following": is_following
     }
 

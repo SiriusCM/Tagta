@@ -116,6 +116,8 @@ import PostModal from '../components/PostModal.vue'
 
 const router = useRouter()
 
+const DEFAULT_PAGE_SIZE = 20
+
 const getAuthHeader = () => {
   const token = localStorage.getItem('identityToken')
   return token ? { 'Authorization': token } : {}
@@ -240,7 +242,32 @@ const loadFollowingPosts = async () => {
 // 加载更多
 const loadMorePosts = async () => {
   currentPage.value++
-  await loadRecommendedPosts()
+  const skip = (currentPage.value - 1) * DEFAULT_PAGE_SIZE
+  if (discoverTab.value === 'recommended') {
+    try {
+      const response = await axios.post('/api/discover', { skip }, { headers: getAuthHeader() })
+      const newPosts = response.data.posts || []
+      if (newPosts.length === 0) {
+        hasMorePosts.value = false
+      } else {
+        recommendedPosts.value = [...recommendedPosts.value, ...newPosts]
+      }
+    } catch (error) {
+      console.error('加载更多失败:', error)
+    }
+  } else {
+    try {
+      const response = await axios.post('/api/feed', { skip }, { headers: getAuthHeader() })
+      const newPosts = response.data.posts || []
+      if (newPosts.length === 0) {
+        hasMorePosts.value = false
+      } else {
+        followingPosts.value = [...followingPosts.value, ...newPosts]
+      }
+    } catch (error) {
+      console.error('加载更多失败:', error)
+    }
+  }
 }
 
 // 搜索用户
@@ -318,14 +345,22 @@ const viewPostDetail = (post) => {
 
 // 分享帖子
 const sharePost = (post) => {
+  const text = `${post.content || ''} - ${post.user?.nickname || post.user?.username || 'Tagta'}`
   if (navigator.share) {
     navigator.share({
       title: 'Tagta',
-      text: post.content,
-      url: window.location.origin + '/post/' + post.id
+      text: text
+    }).catch(() => {
+      // 用户取消分享，忽略
+    })
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToastMessage('已复制到剪贴板')
+    }).catch(() => {
+      showToastMessage('分享失败')
     })
   } else {
-    showToastMessage('分享功能开发中')
+    showToastMessage('当前浏览器不支持分享')
   }
 }
 

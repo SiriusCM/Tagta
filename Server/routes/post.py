@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from models import User, Post, Follow, Like
-from utils.auth import get_current_user, get_identity_token_from_request
+from utils.auth import get_current_user, get_current_user_required
 from utils.oss_uploader import upload_media
 from utils.database import get_db
 
@@ -11,11 +11,6 @@ router = APIRouter(prefix="/api", tags=["帖子"])
 
 DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
-
-
-def get_current_user_from_request(request: Request, db: Session):
-    """从请求中获取当前用户"""
-    return get_current_user(request, db)
 
 
 @router.post("/feed")
@@ -117,10 +112,7 @@ async def create_post(
     1. multipart/form-data: content (Form) + file (File)
     2. application/x-www-form-urlencoded: content + media_type + image + video
     """
-    current_user = get_current_user_from_request(request, db)
-
-    if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="请先登录")
+    current_user = get_current_user_required(request, db)
 
     if content is None or not content.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="内容不能为空")
@@ -178,10 +170,7 @@ async def create_post(
 @router.post("/posts/{post_id}/delete")
 def delete_post(post_id: int, request: Request, db: Session = Depends(get_db)):
     """删除帖子"""
-    current_user = get_current_user_from_request(request, db)
-
-    if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="请先登录")
+    current_user = get_current_user_required(request, db)
 
     post = db.query(Post).filter(Post.id == post_id).first()
     if not post:
@@ -199,10 +188,7 @@ def delete_post(post_id: int, request: Request, db: Session = Depends(get_db)):
 @router.post("/posts/{post_id}/like")
 def like_post(post_id: int, request: Request, db: Session = Depends(get_db)):
     """点赞/取消点赞"""
-    current_user = get_current_user_from_request(request, db)
-
-    if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="请先登录")
+    current_user = get_current_user_required(request, db)
 
     if not db.query(Post).filter(Post.id == post_id).first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="帖子不存在")

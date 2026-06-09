@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from schemas import AppleLoginRequest, TokenVerifyRequest
 from utils.apple_auth import verify_apple_identity_token, get_or_create_user_by_apple_payload
 from utils.redis_client import set_token, get_user_id_by_token, delete_token
-from models import User
+from models import User, Follow, Post
 from utils.database import get_db
 
 router = APIRouter(prefix="/api", tags=["认证"])
@@ -16,10 +16,10 @@ class LogoutRequest(BaseModel):
     token: str
 
 
-@router.get("/test")
-def test():
-    """测试接口"""
-    return {"status": "ok", "message": "后端正常"}
+@router.get("/ping")
+def ping():
+    """健康检查接口"""
+    return {"status": "ok"}
 
 
 @router.post("/apple/login")
@@ -81,9 +81,15 @@ def apple_verify(data: TokenVerifyRequest, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
 
+    # 附加计数信息
+    user_dict = user.to_dict()
+    user_dict["follower_count"] = db.query(Follow).filter(Follow.following_id == user_id).count()
+    user_dict["following_count"] = db.query(Follow).filter(Follow.follower_id == user_id).count()
+    user_dict["post_count"] = db.query(Post).filter(Post.user_id == user_id).count()
+
     return {
         "verified": True,
-        "user": user.to_dict()
+        "user": user_dict
     }
 
 

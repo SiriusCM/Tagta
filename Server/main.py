@@ -44,7 +44,7 @@ async def normalize_request_path(request: Request, call_next):
 # 配置跨域
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=config.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

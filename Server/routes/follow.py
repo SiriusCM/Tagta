@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request, HTTPException, status
 from sqlalchemy.orm import Session
 
 from models import User, Follow
-from utils.auth import get_current_user
+from utils.auth import get_current_user, get_current_user_required
 from utils.database import get_db
 
 router = APIRouter(prefix="/api", tags=["关注"])
@@ -11,18 +11,10 @@ DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
 
 
-def get_current_user_from_request(request: Request, db: Session):
-    """从请求中获取当前用户"""
-    return get_current_user(request, db)
-
-
 @router.post("/follow/{user_id}")
 def follow_user(user_id: int, request: Request, db: Session = Depends(get_db)):
     """关注用户"""
-    current_user = get_current_user_from_request(request, db)
-
-    if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="请先登录")
+    current_user = get_current_user_required(request, db)
 
     if current_user.id == user_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不能关注自己")
@@ -48,10 +40,7 @@ def follow_user(user_id: int, request: Request, db: Session = Depends(get_db)):
 @router.post("/follow/{user_id}/unfollow")
 def unfollow_user(user_id: int, request: Request, db: Session = Depends(get_db)):
     """取消关注"""
-    current_user = get_current_user_from_request(request, db)
-
-    if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="请先登录")
+    current_user = get_current_user_required(request, db)
 
     follow = db.query(Follow).filter_by(
         follower_id=current_user.id,

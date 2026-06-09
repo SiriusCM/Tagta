@@ -36,6 +36,10 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            // 立即发一个网络请求，触发 iOS 本地网络权限弹窗
+            Task {
+                _ = try? await URLSession.shared.data(from: URL(string: "https://gcsng.jr.jd.com/wjzgTest/api/ping")!)
+            }
             Task {
                 await subscriptionManager.updateSubscriptionStatus()
                 if subscriptionManager.isSubscribed {

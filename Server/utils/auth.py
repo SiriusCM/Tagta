@@ -6,13 +6,18 @@ from utils.database import SessionLocal
 
 
 def get_identity_token_from_request(request: Request) -> str:
-    """从请求中获取 identityToken"""
-    # 从 Header 获取
-    return request.headers.get("Authorization")
+    """从请求中获取 identityToken，支持 Bearer 前缀"""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return None
+    # 支持 "Bearer <token>" 和直接传 token 两种格式
+    if auth_header.startswith("Bearer "):
+        return auth_header[7:]
+    return auth_header
 
 
 def get_current_user(request: Request, db: Session = None) -> User:
-    """根据 identityToken 获取当前用户"""
+    """根据 identityToken 获取当前用户，未登录返回 None"""
     identity_token = get_identity_token_from_request(request)
     if not identity_token:
         return None
@@ -22,8 +27,11 @@ def get_current_user(request: Request, db: Session = None) -> User:
     if not user_id:
         return None
 
-    # 刷新 token 过期时间
-    refresh_token(identity_token)
+    # 仅在 Token 剩余时间不足 5 分钟时刷新，减少 Redis 写入
+    from utils.redis_client import redis_client
+    ttl = redis_client.ttl(f"token:{identity_token}")
+    if ttl is not None and 0 < ttl < 300:
+        refresh_token(identity_token)
 
     # 查询用户
     if db is None:
@@ -37,7 +45,7 @@ def get_current_user(request: Request, db: Session = None) -> User:
 
 
 def get_current_user_required(request: Request, db: Session = None) -> User:
-    """获取当前用户，未登录则抛出异常"""
+    """获取当前用户，未登录则抛出 401 异常"""
     user = get_current_user(request, db)
     if not user:
         raise HTTPException(

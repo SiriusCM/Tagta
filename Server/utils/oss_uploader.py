@@ -35,6 +35,18 @@ class JDOssUploader:
         """获取文件扩展名"""
         return os.path.splitext(filename)[1].lower() if filename else ''
 
+    def _validate_extension(self, filename: str, media_type: str) -> None:
+        """校验文件扩展名是否合法，不合法则抛出 ValueError"""
+        ext = self._get_file_extension(filename)
+        if media_type == 'image':
+            allowed = config.ALLOWED_IMAGE_EXTENSIONS
+        elif media_type == 'video':
+            allowed = config.ALLOWED_VIDEO_EXTENSIONS
+        else:
+            return  # 其他类型不校验
+        if not ext or ext not in allowed:
+            raise ValueError(f"不支持的文件格式 {ext}，允许的格式: {', '.join(sorted(allowed))}")
+
     def _generate_s3_key(self, filename: str, media_type: str) -> str:
         """
         生成OSS存储路径
@@ -89,6 +101,9 @@ class JDOssUploader:
             (是否成功, 文件URL, 错误信息)
         """
         try:
+            # 校验文件扩展名
+            self._validate_extension(filename, media_type)
+
             s3_key = self._generate_s3_key(filename, media_type)
             content_type = self._get_content_type(filename)
 
@@ -110,6 +125,18 @@ class JDOssUploader:
         """上传图片"""
         return self.upload_file(file_content, filename, 'image')
 
+    def upload_video(self, file_content: bytes, filename: str) -> Tuple[bool, str, str]:
+        """上传视频"""
+        return self.upload_file(file_content, filename, 'video')
+
+
+# 创建单例上传器实例
+oss_uploader = JDOssUploader()
+
+
+def upload_media(file_content: bytes, filename: str, media_type: str = 'image') -> Tuple[bool, str, str]:
+    """上传媒体文件的便捷函数"""
+    return oss_uploader.upload_file(file_content, filename, media_type)
     def upload_video(self, file_content: bytes, filename: str) -> Tuple[bool, str, str]:
         """上传视频"""
         return self.upload_file(file_content, filename, 'video')

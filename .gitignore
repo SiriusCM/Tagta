@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment variables
+.env
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+View/node_modules/
+View/dist/
+
+# iOS
+App/Tagta.xcodeproj/xcuserdata/
+App/Tagta.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcuserstate
+
+# JoyCode
+.joycode/memory/
+.joycode/modes/
+
+# Uploads
+uploads/
+
+# Logs
+*.log

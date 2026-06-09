@@ -59,6 +59,9 @@ class Settings:
     # 允许的视频格式
     ALLOWED_VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.webm'}
 
+    # CORS 允许的来源（逗号分隔）
+    ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
     # Apple 登录配置
     APPLE_CLIENT_ID = os.getenv("APPLE_CLIENT_ID", "com.sirius.tagta")
     APPLE_ISSUER = "https://appleid.apple.com"

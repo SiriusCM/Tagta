@@ -106,18 +106,13 @@ struct SignInWithAppleView: View {
                     }
                 }
 
-                // 保存登录状态
-                loginManager.saveLoginState(token: userIdentifier)
-
-                // 发送到后端进行验证
-                Task {
-                    await sendToBackend(
-                        identityToken: identityToken,
-                        userIdentifier: userIdentifier,
-                        email: email,
-                        fullName: fullName
-                    )
-                }
+                // 发送到后端进行验证，成功后才保存登录状态
+                await sendToBackend(
+                    identityToken: identityToken,
+                    userIdentifier: userIdentifier,
+                    email: email,
+                    fullName: fullName
+                )
             }
             isLoading = false
 
@@ -150,9 +145,7 @@ struct SignInWithAppleView: View {
     /// 发送登录信息到后端进行验证
     private func sendToBackend(identityToken: String?, userIdentifier: String, email: String?, fullName: String?) async {
         do {
-            // 测试环境用localhost，发布时改为真实地址
-            // guard let url = URL(string: "http://116.196.69.192:8080/api/apple/login") else {
-            guard let url = URL(string: "http://localhost:8080/api/apple/login") else {
+            guard let url = URL(string: "https://gcsng.jr.jd.com/wjzgTest/api/apple/login") else {
                 errorMessage = "服务器地址无效"
                 return
             }
@@ -162,7 +155,6 @@ struct SignInWithAppleView: View {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
             var body: [String: Any] = [
-                "apple_user_id": userIdentifier,
                 "identity_token": identityToken ?? ""
             ]
 
@@ -184,22 +176,29 @@ struct SignInWithAppleView: View {
             }
 
             if httpResponse.statusCode == 200 {
-                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let success = json["success"] as? Bool, success {
-                    // 登录成功
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    // 后端验证成功，保存登录状态
                     if let userData = json["user"] as? [String: Any],
                        let userId = userData["id"] {
                         loginManager.saveUserId(userId as? Int ?? 0)
                     }
-                    // 存储 identityToken（用于后续请求）
-                    if let token = json["identity_token"] as? String {
+                    // 存储 token（用于后续请求）
+                    if let token = json["token"] as? String {
                         loginManager.saveIdentityToken(token)
                     }
+                    // 保存 Apple 用户标识
+                    loginManager.saveLoginState(token: userIdentifier)
                     return
                 }
             }
 
+            // 后端验证失败，重置登录状态
+            loginManager.logout()
+
             if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let detail = json["detail"] as? String {
+                errorMessage = detail
+            } else if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                let message = json["message"] as? String {
                 errorMessage = message
             } else {
@@ -207,6 +206,8 @@ struct SignInWithAppleView: View {
             }
 
         } catch {
+            // 网络错误，重置登录状态
+            loginManager.logout()
             errorMessage = "网络错误: \(error.localizedDescription)"
         }
     }
