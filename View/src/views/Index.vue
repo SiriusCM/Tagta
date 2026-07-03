@@ -468,22 +468,4 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
-.debug-token {
-  background: #fff3cd;
-  border-bottom: 1px solid #ffc107;
-  padding: 6px 12px;
-  font-size: 12px;
-  word-break: break-all;
-  z-index: 999;
-}
-.debug-label {
-  font-weight: bold;
-  color: #856404;
-  margin-right: 4px;
-}
-.debug-value {
-  color: #664d03;
-  user-select: all;
-}
-</style>
+
